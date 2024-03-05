@@ -1,8 +1,10 @@
 theme: Next, 8
-footer: Ian Whitney, ASR (OUE)
+footer: `https://z.umn.edu/splunk_data_presentation`
 
 # Getting Data Into Splunk
-## The What and How
+## The What and The How
+
+Ian Whitney<br>ASR Data Engineering<br>he/his
 
 ---
 
@@ -14,9 +16,9 @@ footer: Ian Whitney, ASR (OUE)
 ---
 
 ## Splunk
-### What Do You Use It For
+### What Do We Use It For
 
-We use it to make sure our applications are healthy
+- Ensuring our applications are healthy
 - Alerts
 - Dashboards
 - Research when things go awry
@@ -24,25 +26,48 @@ We use it to make sure our applications are healthy
 ---
 
 ## Splunk
-### What Do You Need
 
-- Generate Data
-- Get that data in to Splunk
+[.column]
 
----
+### Today's Topics
 
-## Generate Data
-- Log files are a good starting point
-- Do not limit yourself to log files
+- Generation of data
+- Ingestion of data
 
----
+[.column]
 
-## Generate Data
-- More structured = better
+### Another Time
+
+- Working with data in Splunk
 
 ---
 
-## Generate Data
+## Generation
+### Options
+- Application logs
+- Instrumentation
+- API responses
+- Database queries
+- Server metrics
+
+---
+
+## Generation
+### General Advice
+
+---
+
+#### [fit] More structured = better
+#### [fit] More identifiers = better
+
+---
+
+## Generation
+### Application Logs
+
+---
+
+## Generation
 ### Application Logs
 
 - A sensible place to start
@@ -51,22 +76,44 @@ We use it to make sure our applications are healthy
 
 ---
 
-## Generate Data
-### Instrumentation
+## Generation
+### Application Logs
 
-- Many application frameworks let you wrap code to observe code
-- These observations can be sent to Splunk!
+```
+Mar 05 08:23:01 asr-kafka-qat-04.oit.umn.edu docker-compose[130842]: distributed-connect    | \
+[2024-03-05 14:23:01,561] INFO 192.168.96.1 - - [05/Mar/2024:14:23:01 +0000] \
+"GET /connectors/non_credit_registration.sub_offerings/status HTTP/1.1" 200 229 "-" "Ruby" 0 \
+(org.apache.kafka.connect.runtime.rest.RestServer)
+```
 
 ---
 
-## Generate Data
+## Generation
 ### Instrumentation
 
+---
+
+## Generation
+### Instrumentation
+- Offered by many application frameworks 
+- Write code to to observe code
+
+---
+
+## Generation
+### Instrumentation
+
+
 ```ruby
-ActiveSupport::Notifications.instrument "your_application.magic", {} do |instrumentation|
+ActiveSupport::Notifications.instrument "your_application.magic" do |instrumentation|
   # magic happens
 end
 ```
+
+---
+## Generation
+### Instrumentation
+
 
 ```json
 {
@@ -89,45 +136,31 @@ end
 
 ---
 
-## Generate Data
-### Database Queries
-- SQL queries can return json
-- Which you can then put in to Splunk!
-
----
-## Generate Data
-### Database Queries
-
-```sql
-SELECT /*json*/
-    max(updated_at) as most_recent_update
-FROM
-    important_application_table
-;
-```
-
-```json
-{
-    "most_recent_update": 1707750727992772
-}
-```
-
----
-
-## Generate Data
+## Generation
 ### API Responses
+
+---
+
+## Generation
+### API Responses
+- Health checks, status, etc
 - These usually return JSON
-- Put it in Splunk!
 
 ---
 
-## Generate Data
+## Generation
 ### API Responses
 
 ```
-curl -H "Content-Type: application/json"  -X GET \
+curl -H "Content-Type: application/json" \
+-X GET \
 "http://127.0.0.1:8088/healthcheck"
 ```
+
+---
+
+## Generation
+### API Responses
 
 ```json
 {
@@ -149,9 +182,48 @@ curl -H "Content-Type: application/json"  -X GET \
 
 ---
 
-## Generate Data
-### Prebuilt
+## Generation
+### Database Queries
 
+---
+
+## Generation
+### Database Queries
+- Databases contain data and metadata that you can track
+- SQL queries can return JSON
+
+---
+## Generation
+### Database Queries
+
+```sql
+SELECT /*json*/
+    max(updated_at) as most_recent_update
+FROM
+    important_application_table
+;
+```
+
+---
+## Generation
+### Database Queries
+
+```json
+{
+    "most_recent_update": 1707750727992772
+}
+```
+
+---
+
+## Generation
+### Server Metrics
+
+---
+
+## Generation
+### Server Metrics
+- Ask the server how it's doing
 - A lot of data from hosts is already in Splunk
     - `top`
     - `cpu`
@@ -162,10 +234,20 @@ curl -H "Content-Type: application/json"  -X GET \
 
 ## Ingestion
 
+---
+
+## Ingestion
+### Options
 - Have the Splunk team do it
 - Use methods that already exist, `syslog`
 - Send it yourself, `HEC`
 - Other (secretly also `HEC`)
+- Other Other (OpenTelemetry, JMX, etc.)
+
+---
+
+## Ingestion
+### Have the Splunk team do it
 
 ---
 
@@ -175,7 +257,6 @@ curl -H "Content-Type: application/json"  -X GET \
 - Work with the Splunk team
 - Format your files a consistent way
 - Store your files in a consistent location
-- Success!
 
 ---
 
@@ -188,11 +269,22 @@ curl -H "Content-Type: application/json"  -X GET \
 
 ---
 
+![fit](images/rails.png)
+
+---
+
 ## Ingestion
 ### Use methods that already exist, `syslog`
 
-- Splunk already ingests data host log data
-- If you run your process via `systemd` or have Docker log to `journald`, logs end up in Splunk!
+---
+
+## Ingestion
+### Use methods that already exist, `syslog`
+
+- Splunk already ingests host log data
+- Easy to set up if you run your process in
+    - `systemd`
+    - Docker
 - Be sure to add unique and helpful tags
 
 ---
@@ -200,7 +292,17 @@ curl -H "Content-Type: application/json"  -X GET \
 ## Ingestion
 ### Use methods that already exist, `syslog`
 
-> example
+- Ingestion is out of your control
+- Written alongside a _ton_ of other messages, can be noisy
+
+---
+
+![Fit](images/syslog.png)
+
+---
+
+## Ingestion
+### Send it yourself, `HEC`
 
 ---
 
@@ -215,7 +317,17 @@ curl -H "Content-Type: application/json"  -X GET \
 ## Ingestion
 ### Send it yourself, `HEC`
 
-> Example
+- Code for you to manage
+- Sometimes HTTP fails
+
+---
+
+![Fit](images/wfg.jpg)
+
+---
+
+## Ingestion
+### Other (secretly also `HEC`)
 
 ---
 
@@ -226,9 +338,47 @@ curl -H "Content-Type: application/json"  -X GET \
 - Kafka
 - Etc
 
---- 
+---
 
 ## Ingestion
 ### Other (secretly also `HEC`)
 
-> Boomi example
+- Allows you to integrate services in to Splunk
+- Without managing all the integration code
+
+--- 
+
+![Fit](images/boomi.png)
+
+---
+
+## Ingestion
+### Other Other (OpenTelemetry, JMX, etc)
+
+- Splunk offers connectors that ingests these things
+- Ask the Splunk team!
+
+---
+
+# Mix And Match
+
+[.column]
+
+## Generation
+- Application logs
+- Instrumentation
+- API responses
+- Database queries
+- Server metrics
+
+[.column]
+
+## Ingestion
+- Have the Splunk team do it
+- Use methods that already exist, `syslog`
+- Send it yourself, `HEC`
+- Other (secretly also `HEC`)
+
+---
+
+# [fit] Questions
